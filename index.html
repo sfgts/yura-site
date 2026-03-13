@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Жеребьёвка турнира</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>Жеребьёвка турнира</h1>
+
+      <label class="label" for="teamsInput">Игроки / команды (по одной в строке)</label>
+      <textarea id="teamsInput" rows="14" placeholder="Pavlinho19
+Decade
+Noltzer
+Lumix
+SpeciAL"></textarea>
+
+      <div class="controls">
+        <div class="field">
+          <label class="label" for="matchesPerTeam">Соперников на игрока</label>
+          <input id="matchesPerTeam" type="number" min="1" value="4" />
+        </div>
+
+        <div class="field">
+          <label class="label" for="seedInput">Seed</label>
+          <input id="seedInput" type="text" placeholder="Например: seed-123" />
+        </div>
+      </div>
+
+      <label class="label" for="pairingsOutput" style="margin-top:16px;">
+        Pairing values (генерируется автоматически)
+      </label>
+      <textarea
+        id="pairingsOutput"
+        rows="8"
+        readonly
+        placeholder="После жеребьёвки здесь появится список вида: 1v5 1v9 2v8"></textarea>
+
+      <div class="buttons">
+        <button id="buildBtn">Построить сетку</button>
+        <button id="drawBtn">Случайная жеребьёвка</button>
+        <button id="resetBtn" class="secondary">Очистить</button>
+      </div>
+
+      <div id="summary" class="summary"></div>
+      <div id="errorBox" class="error-box"></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="status" id="drawStatus">Пока жеребьёвка не выполнена</div>
+      </div>
+
+      <div class="content">
+        <section class="grid-section">
+          <div class="matrix-wrap">
+            <table id="matrixTable" class="matrix-table"></table>
+          </div>
+        </section>
+
+        <section class="details-section">
+          <div class="selected-card">
+            <div class="selected-title">Выбранный игрок</div>
+            <div id="selectedTeamName" class="selected-team-name">—</div>
+          </div>
+
+          <div class="opponents-card">
+            <div class="selected-title">Соперники</div>
+            <ul id="opponentsList" class="opponents-list"></ul>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
