@@ -157,7 +157,7 @@ function createEmptyMatrix(size) {
 }
 
 function generateDrawWithRounds(teams, matchesPerTeam) {
-  const maxAttempts = 300;
+  const maxAttempts = 10;
   const n = teams.length;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
