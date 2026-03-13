@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Жеребьёвка турнира</title>
+  <title>Tournament Draw</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <h1>Жеребьёвка турнира</h1>
+      <h1>Tournament Draw</h1>
 
-      <label class="label" for="teamsInput">Игроки / команды (по одной в строке)</label>
+      <label class="label" for="teamsInput">Players / Teams (one per line)</label>
       <textarea id="teamsInput" rows="14" placeholder="Pavlinho19
 Decade
 Noltzer
@@ -20,24 +20,24 @@ SpeciAL"></textarea>
 
       <div class="controls">
         <div class="field">
-          <label class="label" for="matchesPerTeam">Соперников на игрока</label>
+          <label class="label" for="matchesPerTeam">Opponents per player</label>
           <input id="matchesPerTeam" type="number" min="1" value="4" />
         </div>
       </div>
 
       <label class="label" for="pairingsOutput" style="margin-top:16px;">
-        Pairing values (генерируется автоматически)
+        Pairing values (generated automatically)
       </label>
       <textarea
         id="pairingsOutput"
         rows="10"
         readonly
-        placeholder="После жеребьёвки здесь появится список вида: 1v5 1v9 1v12"></textarea>
+        placeholder="After the draw, the list will appear here in the format: 1v5 1v9 1v12"></textarea>
 
       <div class="buttons">
-        <button id="buildBtn">Построить сетку</button>
-        <button id="drawBtn">Случайная жеребьёвка</button>
-        <button id="resetBtn" class="secondary">Очистить</button>
+        <button id="buildBtn">Build bracket</button>
+        <button id="drawBtn">Random draw</button>
+        <button id="resetBtn" class="secondary">Clear</button>
       </div>
 
       <div id="summary" class="summary"></div>
@@ -46,31 +46,31 @@ SpeciAL"></textarea>
 
     <main class="main">
       <div class="topbar">
-        <div class="status" id="drawStatus">Пока жеребьёвка не выполнена</div>
+        <div class="status" id="drawStatus">The draw has not been performed yet</div>
       </div>
 
-      <div class="content">
-        <section class="grid-section">
-          <div class="matrix-wrap">
-            <table id="matrixTable" class="matrix-table"></table>
-          </div>
-        </section>
+<section class="grid-section">
+  <div class="matrix-wrap">
+    <table id="matrixTable" class="matrix-table"></table>
+  </div>
+
+  <div id="roundsBoard" class="rounds-board"></div>
+</section>
 
         <section class="details-section">
           <div class="selected-card">
-            <div class="selected-title">Выбранный игрок</div>
+            <div class="selected-title">Selected player</div>
             <div id="selectedTeamName" class="selected-team-name">—</div>
           </div>
 
           <div class="opponents-card">
-            <div class="selected-title">Соперники</div>
+            <div class="selected-title">Opponents</div>
             <ul id="opponentsList" class="opponents-list"></ul>
           </div>
         </section>
       </div>
     </main>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>

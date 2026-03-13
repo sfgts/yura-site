@@ -10,12 +10,14 @@ const opponentsList = document.getElementById("opponentsList");
 const summary = document.getElementById("summary");
 const errorBox = document.getElementById("errorBox");
 const drawStatus = document.getElementById("drawStatus");
+const roundsBoard = document.getElementById("roundsBoard");
 
 let state = {
   teams: [],
   matrix: [],
   selectedIndex: null,
-  matchesPerTeam: 4
+  matchesPerTeam: 4,
+  rounds: []
 };
 
 const demoTeams = [
@@ -46,12 +48,14 @@ function handleBuildGrid() {
   state.matchesPerTeam = matchesPerTeam;
   state.matrix = createEmptyMatrix(teams.length);
   state.selectedIndex = null;
+  state.rounds = [];
 
   renderTable();
   renderSelection();
   updateSummary(0);
   pairingsOutput.value = "";
-  drawStatus.textContent = "Сетка построена, жеребьёвка ещё не выполнена";
+  roundsBoard.innerHTML = "";
+  drawStatus.textContent = "Grid built, draw has not been performed yet";
 }
 
 function handleDraw() {
@@ -66,7 +70,7 @@ function handleDraw() {
     return;
   }
 
-  const drawResult = generateDraw(teams, matchesPerTeam);
+  const drawResult = generateDrawWithRounds(teams, matchesPerTeam);
 
   if (!drawResult.success) {
     showError(drawResult.error);
@@ -76,6 +80,7 @@ function handleDraw() {
   state.teams = teams;
   state.matchesPerTeam = matchesPerTeam;
   state.matrix = drawResult.matrix;
+  state.rounds = drawResult.rounds;
 
   if (state.selectedIndex !== null && state.selectedIndex >= teams.length) {
     state.selectedIndex = null;
@@ -84,10 +89,11 @@ function handleDraw() {
   renderTable();
   renderSelection();
   updateSummary(drawResult.matchCount);
-  pairingsOutput.value = buildPairingsText(state.matrix);
+  pairingsOutput.value = buildPairingsTextFromRounds(drawResult.rounds);
+  renderRoundsBoard(drawResult.rounds, state.teams);
 
   drawStatus.textContent =
-    `Случайная жеребьёвка выполнена: ${drawResult.matchCount} матчей`;
+    `Draw completed: ${drawResult.matchCount} matches, ${drawResult.rounds.length} rounds`;
 }
 
 function handleReset() {
@@ -95,7 +101,8 @@ function handleReset() {
     teams: [],
     matrix: [],
     selectedIndex: null,
-    matchesPerTeam: 4
+    matchesPerTeam: 4,
+    rounds: []
   };
 
   matrixTable.innerHTML = "";
@@ -103,7 +110,8 @@ function handleReset() {
   opponentsList.innerHTML = "";
   summary.textContent = "";
   pairingsOutput.value = "";
-  drawStatus.textContent = "Пока жеребьёвка не выполнена";
+  roundsBoard.innerHTML = "";
+  drawStatus.textContent = "The draw has not been performed yet";
   clearError();
 }
 
@@ -116,25 +124,29 @@ function parseTeams(raw) {
 
 function validateInputs(teams, matchesPerTeam) {
   if (teams.length < 2) {
-    return "Нужно минимум 2 игрока.";
+    return "At least 2 players are required.";
   }
 
   const unique = new Set(teams.map((t) => t.toLowerCase()));
   if (unique.size !== teams.length) {
-    return "В списке есть дубликаты названий игроков.";
+    return "The player list contains duplicate names.";
   }
 
   if (!Number.isInteger(matchesPerTeam) || matchesPerTeam < 1) {
-    return "Количество соперников на игрока должно быть целым числом от 1.";
+    return "The number of opponents per player must be an integer starting from 1.";
   }
 
   if (matchesPerTeam >= teams.length) {
-    return "Количество соперников должно быть меньше количества игроков.";
+    return "The number of opponents must be less than the number of players.";
   }
 
   const total = teams.length * matchesPerTeam;
   if (total % 2 !== 0) {
-    return "Невозможно построить такую жеребьёвку: количество игроков × соперников должно быть чётным.";
+    return "It is impossible to build such a draw: the number of players × opponents must be even.";
+  }
+
+  if (teams.length % 2 !== 0) {
+    return "For rounds without repeating players, the number of players must be even.";
   }
 
   return null;
@@ -144,31 +156,35 @@ function createEmptyMatrix(size) {
   return Array.from({ length: size }, () => Array(size).fill(""));
 }
 
-function generateDraw(teams, matchesPerTeam) {
-  const maxAttempts = 500;
+function generateDrawWithRounds(teams, matchesPerTeam) {
+  const maxAttempts = 300;
+  const n = teams.length;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const matrix = createEmptyMatrix(teams.length);
-    const degrees = Array(teams.length).fill(0);
+    const matrix = createEmptyMatrix(n);
+    const degrees = Array(n).fill(0);
     const targetDegree = matchesPerTeam;
 
     const success = backtrackFill(matrix, degrees, targetDegree);
+    if (!success) continue;
 
-    if (success) {
-      assignHomeAway(matrix);
+    assignHomeAway(matrix);
 
-      const matchCount = countMatches(matrix);
-      return {
-        success: true,
-        matrix,
-        matchCount
-      };
-    }
+    const rounds = scheduleRounds(matrix, matchesPerTeam, n);
+    if (!rounds) continue;
+
+    return {
+      success: true,
+      matrix,
+      rounds,
+      matchCount: countMatches(matrix)
+    };
   }
 
   return {
     success: false,
-    error: "Не удалось собрать корректную случайную жеребьёвку с такими параметрами."
+    error:
+      "Failed to generate a draw that can be distributed into rounds without repeating players. Please try again."
   };
 }
 
@@ -288,35 +304,156 @@ function countMatches(matrix) {
   return count;
 }
 
-function buildPairingsText(matrix) {
-  const lines = [];
-  const matchesPerTeam = state.matchesPerTeam;
+function scheduleRounds(matrix, roundCount, playerCount) {
+  const matches = extractUniquePairs(matrix);
+  const expectedMatchesPerRound = playerCount / 2;
+  const rounds = Array.from({ length: roundCount }, () => ({
+    matches: [],
+    usedPlayers: new Set()
+  }));
 
-  for (let i = 0; i < matrix.length; i++) {
-    const rowPairs = [];
-
-    for (let j = 0; j < matrix.length; j++) {
-      if (i === j) continue;
-
-      if (matrix[i][j] === "H" || matrix[i][j] === "A") {
-        rowPairs.push(`${i + 1}v${j + 1}`);
-      }
-    }
-
-    rowPairs.sort((a, b) => {
-      const aNum = Number(a.split("v")[1]);
-      const bNum = Number(b.split("v")[1]);
-      return aNum - bNum;
-    });
-
-    while (rowPairs.length < matchesPerTeam) {
-      rowPairs.push("-");
-    }
-
-    lines.push(rowPairs.join(" "));
+  // Sort pairs: first pairs of players with fewer options
+  const degreeMap = Array(playerCount).fill(0);
+  for (const match of matches) {
+    degreeMap[match.a]++;
+    degreeMap[match.b]++;
   }
 
-  return lines.join("\n");
+  matches.sort((m1, m2) => {
+    const s1 = degreeMap[m1.a] + degreeMap[m1.b];
+    const s2 = degreeMap[m2.a] + degreeMap[m2.b];
+    return s2 - s1;
+  });
+
+  const success = placeMatchIntoRounds(matches, 0, rounds, expectedMatchesPerRound);
+
+  if (!success) return null;
+
+  return rounds.map((round) => round.matches);
+}
+
+function extractUniquePairs(matrix) {
+  const pairs = [];
+
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = i + 1; j < matrix.length; j++) {
+      if (matrix[i][j] === "H" || matrix[i][j] === "A") {
+        pairs.push({
+          a: i,
+          b: j,
+          text: `${i + 1}v${j + 1}`
+        });
+      }
+    }
+  }
+
+  return pairs;
+}
+
+function placeMatchIntoRounds(matches, index, rounds, expectedMatchesPerRound) {
+  if (index === matches.length) {
+    return rounds.every((round) => round.matches.length === expectedMatchesPerRound);
+  }
+
+  const match = matches[index];
+
+  const roundOrder = rounds
+    .map((round, idx) => ({ round, idx }))
+    .sort((x, y) => x.round.matches.length - y.round.matches.length);
+
+  for (const item of roundOrder) {
+    const round = item.round;
+
+    if (round.matches.length >= expectedMatchesPerRound) continue;
+    if (round.usedPlayers.has(match.a)) continue;
+    if (round.usedPlayers.has(match.b)) continue;
+
+    round.matches.push(match.text);
+    round.usedPlayers.add(match.a);
+    round.usedPlayers.add(match.b);
+
+    if (placeMatchIntoRounds(matches, index + 1, rounds, expectedMatchesPerRound)) {
+      return true;
+    }
+
+    round.matches.pop();
+    round.usedPlayers.delete(match.a);
+    round.usedPlayers.delete(match.b);
+  }
+
+  return false;
+}
+
+function buildPairingsTextFromRounds(rounds) {
+  return rounds.map((round) => round.join(" ")).join("\n");
+}
+
+function renderRoundsBoard(rounds, teams) {
+  roundsBoard.innerHTML = "";
+
+  if (!rounds || !rounds.length) {
+    roundsBoard.innerHTML = `<div class="round-empty">Rounds have not been generated yet</div>`;
+    return;
+  }
+
+  rounds.forEach((round, roundIndex) => {
+    const card = document.createElement("div");
+    card.className = "round-card";
+
+    const title = document.createElement("div");
+    title.className = "round-card-title";
+    title.textContent = `ROUND ${roundIndex + 1}`;
+
+    const subtitle = document.createElement("div");
+    subtitle.className = "round-card-subtitle";
+    subtitle.textContent = `${round.length} matches`;
+
+    const matchesWrap = document.createElement("div");
+    matchesWrap.className = "round-matches";
+
+    round.forEach((pairText) => {
+      const parsed = parsePairText(pairText);
+      if (!parsed) return;
+
+      const homeName = teams[parsed.a - 1] || `Player ${parsed.a}`;
+      const awayName = teams[parsed.b - 1] || `Player ${parsed.b}`;
+
+      const row = document.createElement("div");
+      row.className = "round-match";
+      row.innerHTML = `
+        <div class="round-home">${escapeHtml(homeName)}</div>
+        <div class="round-sep">-</div>
+        <div class="round-away">${escapeHtml(awayName)}</div>
+      `;
+
+      matchesWrap.appendChild(row);
+    });
+
+    card.appendChild(title);
+    card.appendChild(subtitle);
+    card.appendChild(matchesWrap);
+
+    roundsBoard.appendChild(card);
+  });
+}
+
+function parsePairText(pairText) {
+  const match = pairText.match(/^(\d+)v(\d+)$/i);
+  if (!match) return null;
+
+  return {
+    a: Number(match[1]),
+    b: Number(match[2])
+  };
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function renderTable() {
@@ -332,7 +469,13 @@ function renderTable() {
 
   const corner = document.createElement("th");
   corner.className = "corner";
-  corner.textContent = "Игроки";
+
+  corner.innerHTML = `
+    <div class="table-logo">
+      <img src="logo.png" alt="logo">
+    </div>
+  `;
+
   headRow.appendChild(corner);
 
   teams.forEach((team, colIndex) => {
@@ -414,6 +557,8 @@ function renderTable() {
   matrixTable.innerHTML = "";
   matrixTable.appendChild(thead);
   matrixTable.appendChild(tbody);
+
+  updateCellSize(teams.length);
 }
 
 function renderSelection() {
@@ -435,7 +580,7 @@ function renderSelection() {
       li.innerHTML = `
         ${j + 1}. ${teams[j]}
         <span class="badge ${value === "H" ? "home" : "away"}">
-          ${value === "H" ? "Д" : "Г"}
+          ${value === "H" ? "H" : "A"}
         </span>
       `;
       opponentsList.appendChild(li);
@@ -444,7 +589,7 @@ function renderSelection() {
 
   if (!opponentsList.children.length) {
     const li = document.createElement("li");
-    li.textContent = "Соперники ещё не заданы";
+    li.textContent = "Opponents have not been assigned yet";
     opponentsList.appendChild(li);
   }
 }
@@ -452,9 +597,9 @@ function renderSelection() {
 function updateSummary(matchCount) {
   const { teams, matchesPerTeam } = state;
   summary.innerHTML = `
-    Игроков: <strong>${teams.length}</strong><br>
-    Соперников на игрока: <strong>${matchesPerTeam}</strong><br>
-    Всего матчей: <strong>${matchCount}</strong>
+    Players: <strong>${teams.length}</strong><br>
+    Opponents per player: <strong>${matchesPerTeam}</strong><br>
+    Total matches: <strong>${matchCount}</strong>
   `;
 }
 
@@ -471,4 +616,39 @@ function shuffleInPlace(array) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
+}
+
+function updateCellSize(playerCount) {
+  const gridSection = document.querySelector(".grid-section");
+  const gridWidth = gridSection.clientWidth;
+
+  const nameColumn = 240; // player name column width
+  const padding = 40; // small extra space
+
+  const availableWidth = gridWidth - nameColumn - padding;
+
+  let cellSize = Math.floor(availableWidth / playerCount);
+
+  // limits so cells do not become too small
+  if (cellSize > 36) cellSize = 36;
+  if (cellSize < 18) cellSize = 18;
+
+  document.documentElement.style.setProperty("--cell-size", cellSize + "px");
+}
+
+function updateCellSize(playerCount) {
+  const gridSection = document.querySelector(".grid-section");
+  const gridWidth = gridSection.clientWidth;
+
+  const nameColumn = 240;
+  const padding = 40;
+
+  const availableWidth = gridWidth - nameColumn - padding;
+
+  let cellSize = Math.floor(availableWidth / playerCount);
+
+  if (cellSize > 36) cellSize = 36;
+  if (cellSize < 18) cellSize = 18;
+
+  document.documentElement.style.setProperty("--cell-size", cellSize + "px");
 }

@@ -13,15 +13,23 @@
   --accent: #3d7eff;
   --accent-2: #204aa8;
   --danger: #ff6b6b;
+
+  /* Главное */
   --cell-size: 28px;
   --name-col-width: 170px;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: var(--bg);
   color: var(--text);
+}
+
+body {
+  min-height: 100vh;
 }
 
 .app {
@@ -157,11 +165,14 @@ button.secondary:hover {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--panel);
-  max-height: calc(100vh - 110px);
+  max-width: 100%;
+  position: relative;
 }
 
 .matrix-table {
   border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
   width: max-content;
   min-width: 100%;
 }
@@ -170,8 +181,9 @@ button.secondary:hover {
 .matrix-table td {
   border: 1px solid var(--grid);
   text-align: center;
-  min-width: var(--cell-size);
   width: var(--cell-size);
+  min-width: var(--cell-size);
+  max-width: var(--cell-size);
   height: var(--cell-size);
   padding: 0;
   font-size: 12px;
@@ -180,45 +192,66 @@ button.secondary:hover {
 .matrix-table th.corner {
   width: var(--name-col-width);
   min-width: var(--name-col-width);
+  max-width: var(--name-col-width);
+  height: 84px;
   background: #222838;
   position: sticky;
   left: 0;
-  z-index: 4;
+  top: 0;
+  z-index: 20;
+  padding: 0;
+  overflow: hidden;
 }
 
 .matrix-table th.col-head {
   background: #2c3345;
-  height: 130px;
+  height: 120px;
+  min-height: 120px;
+  max-height: 120px;
   vertical-align: bottom;
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 10;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .matrix-table th.col-head > div {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  padding: 8px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;
+  width: 100%;
+
   white-space: nowrap;
-  margin: 0 auto;
+  font-size: 11px;
 }
 
 .matrix-table th.row-head {
   width: var(--name-col-width);
   min-width: var(--name-col-width);
-  text-align: left;
+  max-width: var(--name-col-width);
+  height: var(--cell-size);
+  text-align: middle;
   padding: 0 10px;
   background: #2c3345;
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: 12;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
 
 .matrix-table th.row-head:hover,
 .matrix-table th.col-head:hover {
-  background: #5a3939;
+  background: #39425a;
 }
 
 .matrix-table td.empty {
@@ -227,6 +260,7 @@ button.secondary:hover {
 
 .matrix-table td.diagonal {
   background: #1a1f2c;
+  color: #c7cde0;
 }
 
 .matrix-table td.match-cell {
@@ -299,6 +333,104 @@ button.secondary:hover {
   color: white;
 }
 
+/* Логотип в левой верхней ячейке */
+.table-logo {
+  width: 100%;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.table-logo img {
+  display: block;
+  max-width: calc(var(--name-col-width) - 10px);
+  max-height: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Блок туров */
+.rounds-board {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.round-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.round-card-title {
+  background: #11151f;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.round-card-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 10px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.round-matches {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.round-match {
+  display: grid;
+  grid-template-columns: 1fr 20px 1fr;
+  align-items: center;
+  gap: 8px;
+  background: #2a3142;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.round-home {
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.round-sep {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.round-away {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.round-empty {
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
 @media (max-width: 1200px) {
   .content {
     grid-template-columns: 1fr;
@@ -328,5 +460,18 @@ button.secondary:hover {
 
   .details-section {
     grid-template-columns: 1fr;
+  }
+
+  :root {
+    --name-col-width: 140px;
+  }
+
+  .matrix-table th.col-head {
+    height: 90px;
+  }
+
+  .table-logo img {
+    max-height: 58px;
+    max-width: 100px;
   }
 }
