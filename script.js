@@ -20,31 +20,9 @@ let state = {
 };
 
 const demoTeams = [
-  "Pavlinho19",
-  "Decade",
-  "Noltzer",
-  "Lumix",
-  "SpeciAL",
-  "maggett0",
-  "Tofti",
-  "GanGsta_Panda",
-  "Hristian05",
-  "BlueEyes",
-  "Qnko",
-  "Badema",
-  "Lx7ss",
-  "Maxa",
-  "Duka",
-  "Rodja",
-  "Sef",
-  "Gaga",
-  "KaLuBa",
-  "Hyper",
-  "borees",
-  "Giox",
-  "Boki",
-  "Elmagico",
-  "Maslija"
+  "Player_1",
+  "Player_2",
+  "etc"
 ];
 
 teamsInput.value = demoTeams.join("\n");
