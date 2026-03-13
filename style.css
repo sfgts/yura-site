@@ -264,17 +264,17 @@ button.secondary:hover {
 }
 
 .matrix-table td.match-cell {
-  background: #2b3344;
+  background: #2b3344; 
   color: #fff;
   font-weight: 700;
 }
 
 .matrix-table td.match-cell.home {
-  background: #1f7a3f;
+  background: #27e3ba7c;
 }
 
 .matrix-table td.match-cell.away {
-  background: #8b5e1a;
+  background: #fe3b2981;
 }
 
 .matrix-table td.highlight,
@@ -324,12 +324,12 @@ button.secondary:hover {
 }
 
 .badge.home {
-  background: #1f7a3f;
+  background: #27e3ba7c;
   color: white;
 }
 
 .badge.away {
-  background: #8b5e1a;
+  background: #fe3b2981;
   color: white;
 }
 

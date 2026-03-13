@@ -521,7 +521,7 @@ function renderTable() {
 
       if (rowIndex === colIndex) {
         td.className = "diagonal";
-        td.textContent = "—";
+        td.textContent = "";
       } else {
         const value = matrix[rowIndex]?.[colIndex] || "";
 
