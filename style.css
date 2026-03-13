@@ -193,6 +193,7 @@ button.secondary:hover {
   position: sticky;
   top: 0;
   z-index: 3;
+  cursor: pointer;
 }
 
 .matrix-table th.col-head > div {
@@ -217,7 +218,7 @@ button.secondary:hover {
 
 .matrix-table th.row-head:hover,
 .matrix-table th.col-head:hover {
-  background: #39425a;
+  background: #5a3939;
 }
 
 .matrix-table td.empty {

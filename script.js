@@ -1,7 +1,6 @@
 const teamsInput = document.getElementById("teamsInput");
 const pairingsOutput = document.getElementById("pairingsOutput");
 const matchesPerTeamInput = document.getElementById("matchesPerTeam");
-const seedInput = document.getElementById("seedInput");
 const buildBtn = document.getElementById("buildBtn");
 const drawBtn = document.getElementById("drawBtn");
 const resetBtn = document.getElementById("resetBtn");
@@ -67,8 +66,7 @@ function handleDraw() {
     return;
   }
 
-  const seed = seedInput.value.trim();
-  const drawResult = generateDraw(teams, matchesPerTeam, seed);
+  const drawResult = generateDraw(teams, matchesPerTeam);
 
   if (!drawResult.success) {
     showError(drawResult.error);
@@ -146,20 +144,18 @@ function createEmptyMatrix(size) {
   return Array.from({ length: size }, () => Array(size).fill(""));
 }
 
-function generateDraw(teams, matchesPerTeam, seedText) {
-  const maxAttempts = 400;
-  const baseSeed = stringToSeed(seedText || String(Date.now()));
+function generateDraw(teams, matchesPerTeam) {
+  const maxAttempts = 500;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const rng = mulberry32(baseSeed + attempt);
     const matrix = createEmptyMatrix(teams.length);
     const degrees = Array(teams.length).fill(0);
     const targetDegree = matchesPerTeam;
 
-    const success = backtrackFill(matrix, degrees, targetDegree, rng);
+    const success = backtrackFill(matrix, degrees, targetDegree);
 
     if (success) {
-      assignHomeAway(matrix, rng);
+      assignHomeAway(matrix);
 
       const matchCount = countMatches(matrix);
       return {
@@ -176,7 +172,7 @@ function generateDraw(teams, matchesPerTeam, seedText) {
   };
 }
 
-function backtrackFill(matrix, degrees, targetDegree, rng) {
+function backtrackFill(matrix, degrees, targetDegree) {
   const n = matrix.length;
 
   if (degrees.every((d) => d === targetDegree)) {
@@ -215,7 +211,7 @@ function backtrackFill(matrix, degrees, targetDegree, rng) {
     candidates.push(j);
   }
 
-  shuffleInPlace(candidates, rng);
+  shuffleInPlace(candidates);
 
   for (const opponent of candidates) {
     matrix[current][opponent] = "P";
@@ -225,7 +221,7 @@ function backtrackFill(matrix, degrees, targetDegree, rng) {
 
     if (
       isStateStillPossible(matrix, degrees, targetDegree) &&
-      backtrackFill(matrix, degrees, targetDegree, rng)
+      backtrackFill(matrix, degrees, targetDegree)
     ) {
       return true;
     }
@@ -262,13 +258,13 @@ function isStateStillPossible(matrix, degrees, targetDegree) {
   return true;
 }
 
-function assignHomeAway(matrix, rng) {
+function assignHomeAway(matrix) {
   const n = matrix.length;
 
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       if (matrix[i][j] === "P" && matrix[j][i] === "P") {
-        if (rng() < 0.5) {
+        if (Math.random() < 0.5) {
           matrix[i][j] = "H";
           matrix[j][i] = "A";
         } else {
@@ -314,7 +310,7 @@ function buildPairingsText(matrix) {
     });
 
     while (rowPairs.length < matchesPerTeam) {
-      rowPairs.push(`-`);
+      rowPairs.push("-");
     }
 
     lines.push(rowPairs.join(" "));
@@ -470,34 +466,9 @@ function clearError() {
   errorBox.textContent = "";
 }
 
-function shuffleInPlace(array, rng) {
+function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
+    const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
-}
-
-function stringToSeed(str) {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return functionSeed(h);
-}
-
-function functionSeed(h) {
-  h = Math.imul(h ^ (h >>> 16), 2246822507);
-  h = Math.imul(h ^ (h >>> 13), 3266489909);
-  h ^= h >>> 16;
-  return h >>> 0;
-}
-
-function mulberry32(a) {
-  return function () {
-    let t = (a += 0x6D2B79F5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
