@@ -277,9 +277,24 @@ button.secondary:hover {
   background: #fe3b2981;
 }
 
-.matrix-table td.highlight,
+/* Подсветка через псевдоэлемент — не перекрывает цвет H/A ячеек */
+.matrix-table td,
+.matrix-table th {
+  position: relative;
+}
+
+.matrix-table td.highlight::after,
+.matrix-table th.highlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(100, 130, 200, 0.22);
+  pointer-events: none;
+}
+
+/* Заголовки строк/столбцов — обычный фон подсветки */
 .matrix-table th.highlight {
-  background: #3d4a69 !important;
+  background: #3d4a69;
 }
 
 .selected-card,
@@ -474,4 +489,67 @@ button.secondary:hover {
     max-height: 58px;
     max-width: 100px;
   }
+}
+
+/* ── Draw animations ─────────────────────────────────────────────────── */
+
+/* Status bar pulse */
+@keyframes statusPulse {
+  0%   { opacity: 0; transform: translateY(4px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.status-animate {
+  animation: statusPulse 0.45s ease-out both;
+}
+
+/* Matrix cell: hidden state */
+.cell-hidden {
+  opacity: 0 !important;
+}
+
+/* Matrix cell pop-in */
+@keyframes cellPop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  55%  { opacity: 1; transform: scale(1.25); }
+  75%  { transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.cell-pop {
+  animation: cellPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Round card: hidden state */
+.card-hidden {
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+}
+
+/* Round card slide in */
+@keyframes cardSlideIn {
+  0%   { opacity: 0; transform: translateY(28px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.card-slide-in {
+  animation: cardSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Match row: hidden state */
+.match-hidden {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+
+/* Match row drop-in */
+@keyframes matchDropIn {
+  0%   { opacity: 0; transform: translateX(-14px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.match-drop-in {
+  animation: matchDropIn 0.22s ease-out both;
 }
